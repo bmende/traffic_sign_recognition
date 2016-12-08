@@ -20,6 +20,9 @@ import csv
 path_to_gtsrb = "./GTSRB/Final_Training/Images"
 path_to_test = "./GTSRB/Final_Test/Images/"
 
+HEIGHT = 36
+WIDTH = 36
+
 # function for reading the images
 # arguments: path to the traffic sign data, for example './GTSRB/Training'
 # returns: list of images, list of corresponding labels
@@ -37,12 +40,15 @@ def readTrafficSigns(rootpath=path_to_gtsrb):
         gtReader = csv.reader(gtFile, delimiter=';') # csv parser for annotations file
         gtReader.next() # skip header
         # loop over all images in current annotations file
+        count = 0
         for row in gtReader:
             image = plt.imread(prefix + row[0])
-            image = resize(image, [28, 28])
-            #image = rgb2gray(image)
+            image = resize(image, [HEIGHT, WIDTH])
             images.append(image) # the 1th column is the filename
             labels.append(row[7]) # the 8th column is the label
+            # count += 1
+            # if count > 10:
+            #     break
         gtFile.close()
     return images, labels
 
@@ -55,12 +61,15 @@ def readTrafficSigns_test(rootpath=path_to_test):
     gtReader = csv.reader(gtFile, delimiter=';') # csv parser for annotations file
     gtReader.next() # skip header
 
+    count = 0
     for row in gtReader:
         image = plt.imread(prefix + row[0])
-        image = resize(image, [28, 28])
-        #image = rgb2gray(image)
+        image = resize(image, [HEIGHT, WIDTH])
         images.append(image)
         labels.append(row[7])
+        # count += 1
+        # if count > 10:
+        #     break
 
     gtFile.close()
 

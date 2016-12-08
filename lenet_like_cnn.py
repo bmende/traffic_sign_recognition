@@ -3,6 +3,8 @@ from tensorflow.python.framework import dtypes
 import readTrafficSigns as rt
 import numpy as np
 
+BATCH_SIZE = 20
+
 
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
@@ -30,16 +32,18 @@ def leNet_like_traffic_network(dataset=None, test_data=None):
         raise Exception("You must pass in a dataset! You can't train on nothing!")
     else:
         output_size = 43
-        depth_multiplier = 3
+        color_channels = 3
+        height = rt.HEIGHT
+        width = rt.WIDTH
 
-    x = tf.placeholder(tf.float32, [None, 784*depth_multiplier])
+    x = tf.placeholder(tf.float32, [None, height*width*color_channels])
     y_prime = tf.placeholder(tf.float32, [None, output_size])
 
     # first layer is 5x5 conv on 1 input channel with 32 output channels
-    W_conv1 = weight_variable([5, 5, depth_multiplier, 32])
+    W_conv1 = weight_variable([5, 5, color_channels, 32])
     b_conv1 = bias_variable([32])
 
-    x_image = tf.reshape(x, [-1, 28, 28, depth_multiplier])
+    x_image = tf.reshape(x, [-1, height, width, color_channels])
 
     h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
     h_pool1 = max_pool_2x2(h_conv1)
@@ -51,11 +55,11 @@ def leNet_like_traffic_network(dataset=None, test_data=None):
     h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
     h_pool2 = max_pool_2x2(h_conv2)
 
-    # fully connected layer from 7x7x64 image into 1024 neurons
-    W_fc1 = weight_variable([7*7*64, 1024])
+    # fully connected layer from (height/4)x(width/4)x64 image into 1024 neurons
+    W_fc1 = weight_variable([(height / 4) * (width / 4) * 64, 1024])
     b_fc1 = bias_variable([1024])
 
-    h_pool2_flat = tf.reshape(h_pool2, [-1, 7*7*64])
+    h_pool2_flat = tf.reshape(h_pool2, [-1, (height / 4) * (width / 4) * 64])
     h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
     # dropout stuff to prevent overfitting
@@ -87,8 +91,8 @@ def leNet_like_traffic_network(dataset=None, test_data=None):
             accuracy_to_avg.append(batch_preds)
         return sum(accuracy_to_avg) / len(accuracy_to_avg)
 
-    for i in range(80000):
-        batch = dataset.next_batch(50)
+    for i in range(200000):
+        batch = dataset.next_batch(BATCH_SIZE)
 
         if i % 100 == 0:
             train_accuracy = sess.run(accuracy, feed_dict={x: batch[0],
@@ -98,8 +102,8 @@ def leNet_like_traffic_network(dataset=None, test_data=None):
 
         if i % 5000 == 0:
             print ""
-            print "full train accuracy %g" % eval_in_batches(dataset.images, dataset.labels, 50, sess)
-            print "test accuracy %g" % eval_in_batches(test_data.images, test_data.labels, 50, sess)
+            print "full train accuracy %g" % eval_in_batches(dataset.images, dataset.labels, BATCH_SIZE, sess)
+            print "test accuracy %g" % eval_in_batches(test_data.images, test_data.labels, BATCH_SIZE, sess)
             print ""
 
         sess.run(train_step, feed_dict={x: batch[0],
